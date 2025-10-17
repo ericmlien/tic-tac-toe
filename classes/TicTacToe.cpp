@@ -25,11 +25,12 @@
 // -----------------------------------------------------------------------------
 
 const int AI_PLAYER   = 1;      // index of the AI player (O)
-const int HUMAN_PLAYER= 0;      // index of the human player (X)
+const int HUMAN_PLAYER = 0;      // index of the human player (X)
 static const int kWinningTriples[8][3] = {
     {0, 1, 2,}, {3, 4, 5}, {6, 7, 8},
     {0, 3, 6}, {1, 4, 7}, {2, 5, 8},
-    {0, 4, 8}, {2, 4, 6} };
+    {0, 4, 8}, {2, 4, 6} 
+};
 
 
 using namespace std;
@@ -76,6 +77,9 @@ void TicTacToe::setUpBoard()
         }
     }
     // finally we should call startGame to get everything going
+    // if  (gameHasAI()) {
+    //     setAIPlayer(AI_PLAYER);
+    // }
     startGame();
 }
 
@@ -99,6 +103,7 @@ bool TicTacToe::actionForEmptyHolder(BitHolder *holder)
     //    - Position it at the holder's position (holder->getPosition()).
     //    - Assign it to the holder: holder->setBit(newBit);
     int currentPlayer = getCurrentPlayer() -> playerNumber();
+    // cout << "Current Player: " << currentPlayer << endl;
     Bit* newBit = PieceForPlayer(currentPlayer);
     newBit -> setPosition(holder -> getPosition());
     holder -> setBit(newBit);
@@ -143,8 +148,13 @@ Player* TicTacToe::ownerAt(int index ) const
     // x = index % 3 
     // if there is no bit at that location (in _grid) return nullptr
     // otherwise return the owner of the bit at that location using getOwner()
+    // cout << "Checking for owner at: " << index << endl;
     Bit* ownerBit = _grid[index / 3][index % 3].bit();
-    if (ownerBit == nullptr) return nullptr;
+    if (ownerBit == nullptr) {
+        // cout << "No owner at this bit!" << endl; 
+        return nullptr;
+    }
+    // cout << "We have an owner at this bit! " << ownerBit -> getOwner() -> playerNumber() << endl;
     return ownerBit -> getOwner();
 }
 
@@ -170,12 +180,17 @@ Player* TicTacToe::checkForWinner()
     // to avoid repetitive code
      for (int i = 0; i < 8; i++) {
         const int* triple = kWinningTriples[i];
+        // cout << "Getting owner at these three spots: " << *triple << endl;
         Player* firstOwner = ownerAt(triple[0]);
         Player* secondOwner = ownerAt(triple[1]);
         Player* thirdOwner = ownerAt(triple[2]);
+        if (firstOwner == nullptr || secondOwner == nullptr || thirdOwner == nullptr) {
+            continue;
+        }
         if (firstOwner == secondOwner
             && secondOwner == thirdOwner
             && firstOwner == thirdOwner){
+                cout << "Player " << firstOwner->playerNumber() + 1 << " is our winner!" << endl;
                 return firstOwner;
             }
     }
@@ -297,6 +312,7 @@ void TicTacToe::updateAI()
                 bestMove = result;
                 bestSquare = i;
             }
+            state[i] = '0';
         }
         if (bestSquare != -1) {
             int xcol = bestSquare % 3;
@@ -305,6 +321,8 @@ void TicTacToe::updateAI()
             actionForEmptyHolder(holder);
             endTurn();
             std::cout << "Recursions: " << _recursions << std::endl;
+        } else {
+            cout << "Best Square not found." << endl;
         }
     }
     
@@ -317,8 +335,12 @@ bool aiBoardFull(const std::string& state) {
 int aiWinner(const string& state) {
     for (int i = 0; i < 8; i++) {
         const int *triple = kWinningTriples[i];
-        char player = state[triple[0]];
-        if (player != '0' && player == state[triple[1]] && player == state[triple[2]]) {
+        if (
+            state[triple[0]] != '0'
+            && state[triple[0]] == state[triple[1]]
+            && state[triple[0]] == state[triple[2]]
+        ) {
+            cout << "We Have an AIwinner!" << endl;
             return 10;
         }
     }
