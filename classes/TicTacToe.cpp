@@ -247,7 +247,7 @@ std::string TicTacToe::stateString() const
             Bit* bit = _grid[i][j].bit();
             if (bit != nullptr) {
                 int playerNumber = bit -> getOwner() -> playerNumber() + 1;
-                state[i * 3 + j] = '0' + playerNumber;
+                state[(i * 3) + j] = '0' + playerNumber;
             }
         }
     }
@@ -284,7 +284,7 @@ void TicTacToe::setStateString(const std::string &s)
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
             int playerNumber = s[(i * 3) + j] + '0';
-            if (playerNumber == 0) _grid[i][j].setBit(nullptr);
+            if (playerNumber == 0) _grid[i][j].destroyBit();
             else if (playerNumber == 1 || playerNumber == 2) {
                 _grid[i][j].setBit(PieceForPlayer(playerNumber));
             }
