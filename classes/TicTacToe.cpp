@@ -77,9 +77,11 @@ void TicTacToe::setUpBoard()
         }
     }
     // finally we should call startGame to get everything going
-    // if  (gameHasAI()) {
-    //     setAIPlayer(AI_PLAYER);
-    // }
+    if  (gameHasAI()) {
+        setAIPlayer(AI_PLAYER);
+    }
+
+    cout << "AI Player number: " << AI_PLAYER << endl;
     startGame();
 }
 
@@ -90,7 +92,7 @@ bool TicTacToe::actionForEmptyHolder(BitHolder *holder)
 {
     // 1) Guard clause: if holder is nullptr, fail fast.
     //    (Beginner hint: always check pointers before using them.)
-    if (!holder) return false;
+    if (holder == nullptr) return false;
 
     // 2) Is it actually empty?
     //    Ask the holder for its current Bit using the bit() function.
@@ -133,7 +135,7 @@ void TicTacToe::stopGame()
     // loop through the 3x3 array and call destroyBit on each square
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
-            _grid[i][i].destroyBit();
+            _grid[i][j].destroyBit();
         }
     }
 }
@@ -149,7 +151,7 @@ Player* TicTacToe::ownerAt(int index ) const
     // if there is no bit at that location (in _grid) return nullptr
     // otherwise return the owner of the bit at that location using getOwner()
     // cout << "Checking for owner at: " << index << endl;
-    Bit* ownerBit = _grid[index / 3][index % 3].bit();
+    Bit* ownerBit = _grid[index % 3][index / 3].bit();
     if (ownerBit == nullptr) {
         // cout << "No owner at this bit!" << endl; 
         return nullptr;
@@ -184,12 +186,9 @@ Player* TicTacToe::checkForWinner()
         Player* firstOwner = ownerAt(triple[0]);
         Player* secondOwner = ownerAt(triple[1]);
         Player* thirdOwner = ownerAt(triple[2]);
-        if (firstOwner == nullptr || secondOwner == nullptr || thirdOwner == nullptr) {
-            continue;
-        }
         if (firstOwner == secondOwner
-            && secondOwner == thirdOwner
-            && firstOwner == thirdOwner){
+            && firstOwner == thirdOwner
+            && firstOwner != nullptr){
                 cout << "Player " << firstOwner->playerNumber() + 1 << " is our winner!" << endl;
                 return firstOwner;
             }
@@ -202,11 +201,9 @@ bool TicTacToe::checkForDraw()
     // is the board full with no winner?
     // if any square is empty, return false
     // otherwise return true
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            if (_grid[i][j].bit() == nullptr) {
-                return false;
-            }
+    for (int i = 0; i < 9; i++) {
+        if (ownerAt(i) == nullptr) {
+            return false;
         }
     }
     
@@ -247,7 +244,7 @@ std::string TicTacToe::stateString() const
             Bit* bit = _grid[i][j].bit();
             if (bit != nullptr) {
                 int playerNumber = bit -> getOwner() -> playerNumber() + 1;
-                state[(i * 3) + j] = '0' + playerNumber;
+                state[(j * 3) + i] = static_cast<char>('0' + playerNumber);
             }
         }
     }
@@ -283,10 +280,14 @@ void TicTacToe::setStateString(const std::string &s)
     // but you can assume it will always be 9 characters long and only contain '0', '1', or '2'
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
-            int playerNumber = s[(i * 3) + j] + '0';
-            if (playerNumber == 0) _grid[i][j].destroyBit();
-            else if (playerNumber == 1 || playerNumber == 2) {
-                _grid[i][j].setBit(PieceForPlayer(playerNumber));
+            int playerNumber = s[(j * 3) + i] + '0';
+            if (playerNumber == 0) _grid[i][j].setBit(nullptr);
+            else {
+
+                Bit* newBit = PieceForPlayer(playerNumber - 1);
+                _grid[i][j].setBit(newBit);
+                newBit -> setPosition(_grid[i][j].getPosition());
+
             }
         }
     }
@@ -314,18 +315,18 @@ void TicTacToe::updateAI()
             }
             state[i] = '0';
         }
-        if (bestSquare != -1) {
-            int xcol = bestSquare % 3;
-            int ycol = bestSquare / 3;
-            BitHolder *holder = &_grid[ycol][xcol];
-            actionForEmptyHolder(holder);
-            endTurn();
-            std::cout << "Recursions: " << _recursions << std::endl;
-        } else {
-            cout << "Best Square not found." << endl;
-        }
     }
-    
+    if (bestSquare != -1) {
+        int xcol = bestSquare % 3;
+        int ycol = bestSquare / 3;
+        BitHolder *holder = &_grid[xcol][ycol];
+        actionForEmptyHolder(holder);
+        endTurn();
+        std::cout << "Recursions: " << _recursions << std::endl;
+    } else {
+        cout << "Best Square not found." << endl;
+    }
+
 }
 
 bool aiBoardFull(const std::string& state) {
@@ -364,7 +365,7 @@ int TicTacToe::negamax(string state, int depth, int alpha, int beta, int playerC
     for (int i = 0; i < 9; i++) {
         if (state[i] == '0') {
             state[i] = playerColor == HUMAN_PLAYER ? '1' : '2';
-            int result = -negamax(state, depth++, -beta, -alpha, -playerColor);
+            int result = -negamax(state, depth++, -beta, -alpha, 1-playerColor);
             if (result > bestVal) {
                 bestVal = result;
             }
